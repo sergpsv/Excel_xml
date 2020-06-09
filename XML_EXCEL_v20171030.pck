@@ -1,9 +1,9 @@
-CREATE OR REPLACE PACKAGE XML_EXCEL
+CREATE OR REPLACE PACKAGE xml_excel
 authid current_user
 /*
     author  = sparshukov
-    goal    = выгрузка селекта в слов. оформтированный по правилам Excel без 
-              привлечения XMLType
+    goal    = РІС‹РіСЂСѓР·РєР° СЃРµР»РµРєС‚Р° РІ СЃР»РѕРІ. РѕС„РѕСЂРјС‚РёСЂРѕРІР°РЅРЅС‹Р№ РїРѕ РїСЂР°РІРёР»Р°Рј Excel Р±РµР· 
+              РїСЂРёРІР»РµС‡РµРЅРёСЏ XMLType
 */
 is
   gpv_version   constant varchar2(10) := '1.0';
@@ -24,11 +24,12 @@ is
 
 end;
 /
-CREATE OR REPLACE PACKAGE BODY XML_EXCEL
+
+CREATE OR REPLACE PACKAGE BODY xml_excel
 IS
   doc       xmldom.DOMDocument;
-  main_node xmldom.DOMNode;  -- весь XML document
-  root_node xmldom.DOMNode;  -- первый элемент в списке = содержит весь документ
+  main_node xmldom.DOMNode;  -- РІРµСЃСЊ XML document
+  root_node xmldom.DOMNode;  -- РїРµСЂРІС‹Р№ СЌР»РµРјРµРЅС‚ РІ СЃРїРёСЃРєРµ = СЃРѕРґРµСЂР¶РёС‚ РІРµСЃСЊ РґРѕРєСѓРјРµРЅС‚
   root_elmt xmldom.DOMElement; --
 
   book_node   xmldom.DOMNode;
@@ -230,12 +231,12 @@ end;
 --//////////////////////////////////////////////////////////////////////////////
 procedure AddSheet(p_sql varchar2, p_sheetName varchar2)
 is
-   l_descTbl		dbms_sql.desc_tab;       -- таблица описаний
+   l_descTbl		dbms_sql.desc_tab;       -- С‚Р°Р±Р»РёС†Р° РѕРїРёСЃР°РЅРёР№
    l_rowCounter	number   := 0;
    l_theCursor		number   ;
-   l_colCnt			number   :=0;            -- кол-во колонок
-   l_status			number   :=0;            -- результат выполнения запроса
-   l_colValue		varchar2(500)  :='';     -- значение столбца
+   l_colCnt			number   :=0;            -- РєРѕР»-РІРѕ РєРѕР»РѕРЅРѕРє
+   l_status			number   :=0;            -- СЂРµР·СѓР»СЊС‚Р°С‚ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РїСЂРѕСЃР°
+   l_colValue		varchar2(500)  :='';     -- Р·РЅР°С‡РµРЅРёРµ СЃС‚РѕР»Р±С†Р°
    l_colDateValue	date;
    type TColRec is record
    (
@@ -253,11 +254,11 @@ begin
 
   if colList is not null then colList.delete; end if;
 
-  -- открываем курсор
+  -- РѕС‚РєСЂС‹РІР°РµРј РєСѓСЂСЃРѕСЂ
   l_theCursor := dbms_sql.open_cursor;
-  -- анализируем запрос
+  -- Р°РЅР°Р»РёР·РёСЂСѓРµРј Р·Р°РїСЂРѕСЃ
   dbms_sql.parse(l_theCursor, p_sql, dbms_sql.native);
-  -- получаем описание результатов запроса
+  -- РїРѕР»СѓС‡Р°РµРј РѕРїРёСЃР°РЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ Р·Р°РїСЂРѕСЃР°
   dbms_sql.describe_columns(l_theCursor, l_colCnt, l_descTbl);
 
   item_elmt := xmldom.createElement(doc,'Worksheet');
@@ -286,7 +287,7 @@ begin
       colList(i).column_idx  := i;
       colList(i).column_node := xmldom.appendChild(table_node, xmldom.makeNode(item_elmt));
       colList(i).column_maxLen := l_descTbl(i).col_name_len;
-      -- связываем солбцы курсора с переменной, в которую будем таскать значения
+      -- СЃРІСЏР·С‹РІР°РµРј СЃРѕР»Р±С†С‹ РєСѓСЂСЃРѕСЂР° СЃ РїРµСЂРµРјРµРЅРЅРѕР№, РІ РєРѕС‚РѕСЂСѓСЋ Р±СѓРґРµРј С‚Р°СЃРєР°С‚СЊ Р·РЅР°С‡РµРЅРёСЏ
 --RVS 18/08/2008 start
       if l_descTbl(i).col_type = 12 then
       	dbms_sql.define_column(l_theCursor, i, l_colDateValue);
@@ -296,7 +297,7 @@ begin
       end if;
     end loop;
 
-    -- формируем заголовок - первая строка Excel
+    -- С„РѕСЂРјРёСЂСѓРµРј Р·Р°РіРѕР»РѕРІРѕРє - РїРµСЂРІР°СЏ СЃС‚СЂРѕРєР° Excel
     item_elmt  := xmldom.createElement(doc, 'Row');
     row_node := xmldom.appendChild(table_node, xmldom.makeNode(item_elmt));
     for i in 1..l_colCnt
@@ -311,9 +312,9 @@ begin
             item_node := xmldom.appendChild(data_node, xmldom.makeNode(item_text));
     end loop;
 
-    -- выполняем запрос
+    -- РІС‹РїРѕР»РЅСЏРµРј Р·Р°РїСЂРѕСЃ
     l_status := dbms_sql.execute(l_theCursor);
-    -- извлекаем результаты
+    -- РёР·РІР»РµРєР°РµРј СЂРµР·СѓР»СЊС‚Р°С‚С‹
 	while (dbms_sql.fetch_rows(l_theCursor) > 0 )
 	loop
 		item_elmt  := xmldom.createElement(doc, 'Row');
@@ -426,7 +427,7 @@ BEGIN
 
 exception
   when others then
-    dbms_output.put_line('Исключение при makeExcelXml: '||SQLERRM);
+    dbms_output.put_line('РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё makeExcelXml: '||SQLERRM);
 /*    if not xmldom.isnull(doc) then
       xmldom.freeDocument(doc);
     end if;*/
